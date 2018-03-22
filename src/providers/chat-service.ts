@@ -4,15 +4,24 @@ import { map } from 'rxjs/operators/map';
 import { HttpClient } from "@angular/common/http";
 import {Observable} from "rxjs/Observable";
 
-export class ChatMessage {
-    messageId: string;
+
+export class Message {
+    id: string;
+    type: string;
+    time: number | string;
+}
+
+export class ChatMessage extends Message {
     userId: string;
     userName: string;
     userAvatar: string;
     toUserId: string;
-    time: number | string;
     content: string;
     status: string;
+}
+
+export class RespondMessage extends Message {
+    msgReceived: boolean;
 }
 
 export class UserInfo {
@@ -28,25 +37,6 @@ export class ChatService {
                 private events: Events) {
     }
 
-    mockNewMsg(msg) {
-        console.log(msg);
-        this.getUserInfo(msg.userId).then(toUser => {
-            const mockMsg: ChatMessage = {
-                messageId: Date.now().toString(),
-                userId: toUser.id,
-                userName: toUser.name,
-                userAvatar: toUser.avatar,
-                toUserId: msg.userId,
-                time: Date.now(),
-                content: msg.content,
-                status: 'success'
-            };
-            setTimeout(() => {
-                this.events.publish('chat:received', mockMsg, Date.now())
-            }, Math.random() * 1800)
-        });
-    }
-
     getMsgList(toUserId): Observable<ChatMessage[]> {
         let msgListUrl = '';
         if (toUserId == '140000198202211138') {
@@ -57,11 +47,6 @@ export class ChatService {
         } 
         return this.http.get<any>(msgListUrl)
           .pipe(map(response => response.array));
-    }
-
-    sendMsg(msg: ChatMessage) {
-        return new Promise(resolve => setTimeout(() => resolve(msg), Math.random() * 1000))
-        .then(() => this.mockNewMsg(msg));
     }
 
     getUserInfo(toUserId: string): Promise<UserInfo> {

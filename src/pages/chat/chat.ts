@@ -1,7 +1,7 @@
 import { Component, ViewChild } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
 import { Events, Content, TextInput } from 'ionic-angular';
-import { ChatService, ChatMessage, UserInfo } from "../../providers/chat-service";
+import { ChatService, Message, ChatMessage, RespondMessage, UserInfo } from "../../providers/chat-service";
 // import {JIM} from '../../providers/JIM-service';
 import moment from 'moment';
 
@@ -50,7 +50,7 @@ export class Chat {
     }
 
     initWebSocket(){
-        this.webSocket = new WebSocket('ws://localhost:8081/hellows/chat/' + this.user.id);
+        this.webSocket = new WebSocket('ws://localhost:10002/wschat/chat/' + this.user.id);
         //连接发生错误的回调方法  
         this.webSocket.onerror = () => {
             console.log("WebSocket连接发生错误");
@@ -63,9 +63,8 @@ export class Chat {
 
         //接收到消息的回调方法  
         this.webSocket.onmessage = (event) => {
-            let mfs: ChatMessage = JSON.parse(event.data);
-            console.log(mfs);
-            this.pushNewMsg(mfs);
+            this.dealMessage(event.data);
+            
         }
 
         //连接关闭的回调方法  
@@ -74,6 +73,19 @@ export class Chat {
         }
     }
 
+    /**
+     * 根据消息类型type(1其他连接的消息, 0服务端的响应)做出不同处理
+     * @param recMsg onMessage收到来自服务端的消息
+     */
+    dealMessage(recMsg: string): void{
+        let message: Message = JSON.parse(recMsg);
+        if (message.type == '1') {
+            this.pushNewMsg(<ChatMessage>message);
+        }
+        if (message.type == '0' && (<RespondMessage>message).msgReceived) {
+            this.msgList[this.msgList.length - 1].status = "success";
+        }
+    }
     ionViewWillLeave() {
         // unsubscribe
         this.events.unsubscribe('chat:received');
@@ -118,50 +130,17 @@ export class Chat {
         });
     }
 
-    /**
-     * @name sendMsg
-     */
-    // sendMsg() {
-    //     if (!this.editorMsg.trim()) return;
-
-    //     // Mock message
-    //     const id = Date.now().toString();
-    //     let newMsg: ChatMessage = {
-    //         messageId: Date.now().toString(),
-    //         userId: this.user.id,
-    //         userName: this.user.name,
-    //         userAvatar: this.user.avatar,
-    //         toUserId: this.toUser.id,
-    //         time: Date.now(),
-    //         message: this.editorMsg,
-    //         status: 'pending'
-    //     };
-
-    //     this.pushNewMsg(newMsg);
-    //     this.editorMsg = '';
-
-    //     if (!this.showEmojiPicker) {
-    //         this.messageInput.setFocus();
-    //     }
-
-    //     this.chatService.sendMsg(newMsg)
-    //     .then(() => {
-    //         let index = this.getMsgIndexById(id);
-    //         if (index !== -1) {
-    //             this.msgList[index].status = 'success';
-    //         }
-    //     })
-    // }
     sendMsg(){
         if (!this.editorMsg.trim()) return;
         let newMsg: ChatMessage = {
-            messageId: moment().format('x'),
+            id: moment().format('x'),
             userId: this.user.id,
             userName: this.user.name,
             userAvatar: this.user.avatar,
             toUserId: this.toUser.id,
             time: moment().format('YYYY-MM-DD HH:mm:ss'),
             content: this.editorMsg,
+            type: "1",
             status: 'pending'
         };
         this.webSocket.send(JSON.stringify(newMsg));
@@ -189,7 +168,7 @@ export class Chat {
     }
 
     getMsgIndexById(id: string) {
-        return this.msgList.findIndex(e => e.messageId === id)
+        return this.msgList.findIndex(e => e.id === id)
     }
 
     scrollToBottom() {
