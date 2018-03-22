@@ -5,5 +5,5 @@
 
 #### 效果
 
-![https://raw.githubusercontent.com/fightant1w1ll/ionic-chat/master/ionic-chat.gif]()
+![](https://raw.githubusercontent.com/fightant1w1ll/ionic-chat/master/src/assets/ionic-chat.gif)
 
