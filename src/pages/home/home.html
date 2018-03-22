@@ -1,0 +1,20 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>Home</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content>
+
+  <ion-list>
+
+    <ion-item navPush="Chat" *ngFor="let toUser of toUserList"
+              [navParams]="toUser">
+      <ion-avatar item-left>
+        <img src="./assets/{{toUser.photo}}">
+      </ion-avatar>
+      <h2>{{toUser.toUserName}}</h2>
+      <p>{{toUser.lastWords}}</p>
+    </ion-item>
+  </ion-list>
+</ion-content>
